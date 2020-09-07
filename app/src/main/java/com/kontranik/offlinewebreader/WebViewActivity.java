@@ -66,7 +66,12 @@ public class WebViewActivity extends AppCompatActivity {
             Lt.d("Web page loaded: " + url);
 
             if ( page == null ) saveButton.show();
-            if ( page != null && webView.getUrl().equals("file://" + page.getFilename()) ) webView.scrollTo(0, (int) page.getPosition() );
+            if ( page != null && webView.getUrl().equals("file://" + page.getFilename()) ) {
+                float webviewsize = webView.getContentHeight() - webView.getTop();
+                float positionInWV = webviewsize * page.getPosition();
+                int positionY = Math.round(webView.getTop() + positionInWV);
+                webView.scrollTo(0, positionY);
+            }
             miUpdateArchive.setEnabled(page != null && !webView.getUrl().startsWith("file://"));
             super.onPageFinished(view, url);
         }
@@ -153,6 +158,15 @@ public class WebViewActivity extends AppCompatActivity {
 
     }
 
+    // Calculate the % of scroll progress in the actual web page content
+    private float calculateProgression() {
+        float positionTopView = webView.getTop();
+        float contentHeight = webView.getContentHeight();
+        float currentScrollPosition = webView.getScrollY();
+        float percentWebview = (currentScrollPosition - positionTopView) / contentHeight;
+        return percentWebview;
+    }
+
     public void saveArchive(){
         if ( page != null) {
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
@@ -178,16 +192,16 @@ public class WebViewActivity extends AppCompatActivity {
     private void updateArchive() {
         page.setOrigin(webView.getUrl());
         page.setName(webView.getTitle());
-        page.setPosition(webView.getScrollY());
+        page.setPosition(calculateProgression());
         saveDB(page);
         saveArchiveFile(page.getFilename());
         saveButton.hide();
     }
 
     private void updatePosition() {
-        if ( page != null && page.getPosition() != webView.getScrollY() ) {
+        if ( page != null && page.getPosition() != calculateProgression() ) {
             adapter.open();
-            page.setPosition(webView.getScrollY());
+            page.setPosition(calculateProgression());
             adapter.update(page);
             adapter.close();
         }
@@ -313,6 +327,7 @@ public class WebViewActivity extends AppCompatActivity {
                 updateArchive();
                 return true;
             case android.R.id.home:
+                updatePosition();
                 finish();
                 return true;
         }

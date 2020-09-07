@@ -9,7 +9,12 @@
     <ListView
         android:id="@+id/offlinepageList"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:divider="#4CAF50"
+        android:dividerHeight="2dp"
+        android:footerDividersEnabled="false"
+        android:headerDividersEnabled="false"
+        android:padding="16dp" />
 
     <include layout="@layout/main_fab"/>
 

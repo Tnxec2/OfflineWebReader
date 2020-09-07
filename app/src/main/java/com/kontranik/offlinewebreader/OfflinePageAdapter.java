@@ -50,9 +50,9 @@ public class OfflinePageAdapter extends ArrayAdapter<OfflinePage> {
 
         Float pagePosition = entry.getPosition();
         if ( pagePosition != null ) {
-            viewHolder.positionView.setText(String.format("%.0f", entry.getPosition()));
+            viewHolder.positionView.setText(String.format("%.0f %%", pagePosition));
         } else {
-            viewHolder.positionView.setText("0");
+            viewHolder.positionView.setText("0 %");
         }
 
         byte[] imgByte = entry.getImage();
