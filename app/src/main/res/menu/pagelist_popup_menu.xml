@@ -5,11 +5,11 @@
     <item
         android:id="@+id/action_open_archive_from_list"
         android:orderInCategory="1"
-        android:title="Open" />
+        android:title="@string/open" />
 
     <item
         android:id="@+id/action_delete_archive_from_list"
         android:orderInCategory="1"
-        android:title="Delete" />
+        android:title="@string/delete" />
 
 </menu>

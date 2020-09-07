@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Offline WebReader</string>
+    <string name="paste">Paste</string>
+    <string name="edit">Edit</string>
+    <string name="open">Open</string>
+    <string name="delete">Delete</string>
+    <string name="update">Update</string>
 </resources>
