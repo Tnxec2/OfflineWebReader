@@ -31,6 +31,7 @@ public class DatabaseAdapter {
         String[] columns = new String[] {
                 DatabaseHelper.COLUMN_ID,
                 DatabaseHelper.COLUMN_NAME,
+                DatabaseHelper.COLUMN_FILENAME,
                 DatabaseHelper.COLUMN_ORIGIN,
                 DatabaseHelper.COLUMN_IMAGE,
                 DatabaseHelper.COLUMN_POSITION,
@@ -46,11 +47,12 @@ public class DatabaseAdapter {
             do{
                 int id = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COLUMN_ID));
                 String name = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_NAME));
+                String filename = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_FILENAME));
                 String origin = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_ORIGIN));
-                byte[] imagename = cursor.getBlob(cursor.getColumnIndex(DatabaseHelper.COLUMN_IMAGE));
+                byte[] image = cursor.getBlob(cursor.getColumnIndex(DatabaseHelper.COLUMN_IMAGE));
                 float position = cursor.getFloat(cursor.getColumnIndex(DatabaseHelper.COLUMN_POSITION));
                 Long created = cursor.getLong(cursor.getColumnIndex(DatabaseHelper.COLUMN_CREATED));
-                pages.add(new OfflinePage(id, name, origin, imagename, position, created));
+                pages.add(new OfflinePage(id, origin, name, filename, image, position, created));
             }
             while (cursor.moveToNext());
         }
@@ -68,11 +70,12 @@ public class DatabaseAdapter {
         Cursor cursor = database.rawQuery(query, new String[]{ String.valueOf(id)});
         if(cursor.moveToFirst()){
             String name = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_NAME));
+            String filename = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_FILENAME));
             String origin = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_ORIGIN));
             byte[] imagename = cursor.getBlob(cursor.getColumnIndex(DatabaseHelper.COLUMN_IMAGE));
             float position = cursor.getFloat(cursor.getColumnIndex(DatabaseHelper.COLUMN_POSITION));
             Long created = cursor.getLong(cursor.getColumnIndex(DatabaseHelper.COLUMN_CREATED));
-            entry = new OfflinePage(id, name, origin, imagename, position, created);
+            entry = new OfflinePage(id, origin, name, filename, imagename, position, created);
         }
         cursor.close();
         return  entry;
@@ -82,6 +85,7 @@ public class DatabaseAdapter {
 
         ContentValues cv = new ContentValues();
         cv.put(DatabaseHelper.COLUMN_NAME, entry.getName());
+        cv.put(DatabaseHelper.COLUMN_FILENAME, entry.getFilename());
         cv.put(DatabaseHelper.COLUMN_ORIGIN, entry.getOrigin());
         cv.put(DatabaseHelper.COLUMN_IMAGE, entry.getImage());
         cv.put(DatabaseHelper.COLUMN_POSITION, entry.getPosition());
@@ -102,6 +106,7 @@ public class DatabaseAdapter {
         String whereClause = DatabaseHelper.COLUMN_ID + "=" + String.valueOf(entry.getId());
         ContentValues cv = new ContentValues();
         cv.put(DatabaseHelper.COLUMN_NAME, entry.getName());
+        cv.put(DatabaseHelper.COLUMN_FILENAME, entry.getFilename());
         cv.put(DatabaseHelper.COLUMN_ORIGIN, entry.getOrigin());
         cv.put(DatabaseHelper.COLUMN_IMAGE, entry.getImage());
         cv.put(DatabaseHelper.COLUMN_POSITION, entry.getPosition());

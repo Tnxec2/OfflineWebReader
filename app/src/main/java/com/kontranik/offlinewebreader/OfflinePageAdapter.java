@@ -1,12 +1,17 @@
 package com.kontranik.offlinewebreader;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.media.Image;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import java.text.DateFormat;
@@ -16,52 +21,116 @@ import java.util.List;
 
 public class OfflinePageAdapter extends ArrayAdapter<OfflinePage> {
 
-        private LayoutInflater inflater;
-        private int layout;
-        private List<OfflinePage> entrys;
+    private LayoutInflater inflater;
+    private int layout;
+    private List<OfflinePage> entrys;
 
-        public OfflinePageAdapter(Context context, int resource, List<OfflinePage> list) {
-            super(context, resource, list);
-            this.entrys = list;
-            this.layout = resource;
-            this.inflater = LayoutInflater.from(context);
+    public OfflinePageAdapter(Context context, int resource, List<OfflinePage> list) {
+        super(context, resource, list);
+        this.entrys = list;
+        this.layout = resource;
+        this.inflater = LayoutInflater.from(context);
+    }
+
+    public View getView(final int position, View convertView, final ViewGroup parent) {
+
+        final ViewHolder viewHolder;
+        if(convertView==null){
+            convertView = inflater.inflate(this.layout, parent, false);
+            viewHolder = new ViewHolder(convertView);
+            convertView.setTag(viewHolder);
+        }
+        else{
+            viewHolder = (ViewHolder) convertView.getTag();
+        }
+        final OfflinePage entry = entrys.get(position);
+
+        viewHolder.nameView.setText(entry.getName());
+        viewHolder.originView.setText( entry.getOrigin());
+
+        Float pagePosition = entry.getPosition();
+        if ( pagePosition != null ) {
+            viewHolder.positionView.setText(String.format("%.0f", entry.getPosition()));
+        } else {
+            viewHolder.positionView.setText("0");
         }
 
-        public View getView(int position, View convertView, ViewGroup parent) {
+        byte[] imgByte = entry.getImage();
+        if ( imgByte == null) {
+            viewHolder.coverView.setImageDrawable( parent.getResources().getDrawable(R.drawable.ic_insert_drive_file_black_24dp));
+        } else {
+            viewHolder.coverView.setImageBitmap(BitmapFactory.decodeByteArray(imgByte, 0, imgByte.length));
+        }
 
-            View view=inflater.inflate(this.layout, parent, false);
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd HH:mm");
 
-            ImageView coverView = (ImageView) view.findViewById(R.id.cover);
-            TextView nameView = (TextView) view.findViewById(R.id.name);
-            TextView originView = (TextView) view.findViewById(R.id.origin);
-            TextView positionView = (TextView) view.findViewById(R.id.position);
-            TextView createdView = (TextView) view.findViewById(R.id.created);
+        Long created = entry.getCreated();
+        if ( created != null ) {
+            viewHolder.createdView.setText(dateFormat.format(new Date(entry.getCreated())));
+        }
 
-            OfflinePage entry = entrys.get(position);
+        viewHolder.menuButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Creating the instance of PopupMenu
+                PopupMenu popup = new PopupMenu(getContext(), viewHolder.menuButton);
+                //Inflating the Popup using xml file
+                popup.getMenuInflater().inflate(R.menu.pagelist_popup_menu, popup.getMenu());
 
-            byte[] imgByte = entry.getImage();
-            if ( imgByte == null) {
-                coverView.setImageDrawable( parent.getResources().getDrawable(R.drawable.file));
-            } else {
-                coverView.setImageBitmap(BitmapFactory.decodeByteArray(imgByte, 0, imgByte.length));
+                //registering popup with OnMenuItemClickListener
+                popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    public boolean onMenuItemClick(MenuItem item) {
+                        switch (item.getItemId()) {
+                            case R.id.action_open_archive_from_list:
+                                openArchiv(entry);
+                                break;
+                            case R.id.action_delete_archive_from_list:
+                                deleteEntry(entry, position);
+                                break;
+                        }
+
+                        return true;
+                    }
+                });
+
+                popup.show();//showing popup menu
             }
-            nameView.setText(entry.getName());
-            originView.setText(entry.getOrigin());
+        });//closing the setOnClickListener method
 
-            Float pos = entry.getPosition();
-            if ( pos != null ) {
-                positionView.setText(String.format("%.0f", entry.getPosition()));
-            } else {
-                positionView.setText("0");
-            }
+        return convertView;
+    }
 
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd HH:mm");
+    private class ViewHolder {
+        final ImageView coverView;
+        final ImageButton menuButton;
+        final TextView nameView;
+        final TextView originView;
+        final TextView positionView;
+        final TextView createdView;
 
-            Long created = entry.getCreated();
-            if ( created != null ) {
-                createdView.setText(dateFormat.format(new Date(entry.getCreated())));
-            }
-
-            return view;
+        ViewHolder(View view){
+            coverView = (ImageView) view.findViewById(R.id.cover);
+            nameView = (TextView) view.findViewById(R.id.name);
+            originView = (TextView) view.findViewById(R.id.origin);
+            positionView = (TextView) view.findViewById(R.id.position);
+            createdView = (TextView) view.findViewById(R.id.created);
+            menuButton = view.findViewById(R.id.btnMenu);
         }
     }
+
+    private void openArchiv(OfflinePage entry) {
+        Lt.d(entry.getOrigin());
+        Intent intent = new Intent(getContext(), WebViewActivity.class);
+        intent.putExtra( OfflinePage.class.getSimpleName(), entry);
+        getContext().startActivity(intent);
+    }
+
+    private void deleteEntry(OfflinePage entry, int position) {
+        entrys.remove(position);
+        notifyDataSetChanged();
+        DatabaseAdapter dbadapter = new DatabaseAdapter(getContext());
+        dbadapter.open();
+        dbadapter.delete(entry.getId());
+        dbadapter.close();
+    }
+}

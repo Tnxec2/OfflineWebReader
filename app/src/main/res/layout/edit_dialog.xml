@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/linearLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:padding="16dp">
+
+
+    <EditText
+        android:id="@+id/edtDialog_Address"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="top"
+        android:hint="Page URL"
+        android:imeOptions="actionSend"
+        android:inputType="text"
+        app:layout_constraintEnd_toStartOf="@+id/btnDialog_Send"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btnDialog_Send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/edtDialog_Address"
+        app:layout_constraintTop_toTopOf="@+id/edtDialog_Address"
+        app:srcCompat="@drawable/ic_send_black_24dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

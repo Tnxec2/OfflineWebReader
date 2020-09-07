@@ -8,12 +8,13 @@ import android.content.ContentValues;
 import java.util.Date;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
-    private static final String DATABASE_NAME = "offlinewebreader.db"; // название бд
-    private static final int SCHEMA = 1; // версия базы данных
-    static final String TABLE = "pages"; // название таблицы в бд
-    // названия столбцов
+    private static final String DATABASE_NAME = "offlinewebreader.db";
+    private static final int SCHEMA = 2;
+    static final String TABLE = "pages";
+    //
     public static final String COLUMN_ID = "_id";
     public static final String COLUMN_NAME = "name";
+    public static final String COLUMN_FILENAME = "filename";
     public static final String COLUMN_ORIGIN = "origin";
     public static final String COLUMN_IMAGE = "image";
     public static final String COLUMN_POSITION = "position";
@@ -29,6 +30,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE " + TABLE + " (" + COLUMN_ID
                 + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + COLUMN_NAME + " TEXT, "
+                + COLUMN_FILENAME + " TEXT, "
                 + COLUMN_ORIGIN + " TEXT, "
                 + COLUMN_IMAGE + " BLOB, "
                 + COLUMN_POSITION + " REAL, "
@@ -36,12 +38,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + ");");
 
 
-        // добавление начальных данных
+        // insert test data
         long d = new Date().getTime();
-        db.execSQL("INSERT INTO "+ TABLE +" (" + COLUMN_NAME
-                + ", " + COLUMN_ORIGIN  + ", " + COLUMN_CREATED + ") VALUES ('test1', 'http://test1', " + d + ");");
-        db.execSQL("INSERT INTO "+ TABLE +" (" + COLUMN_NAME
-                + ", " + COLUMN_ORIGIN  + ", " + COLUMN_CREATED + ") VALUES ('test2', 'http://test2', " + d + ");");
+        db.execSQL("INSERT INTO "+ TABLE +" ("
+                + COLUMN_NAME + ", "
+                + COLUMN_FILENAME + ", "
+                + COLUMN_ORIGIN  + ", "
+                + COLUMN_CREATED + ") VALUES ('test1', 'savedarchiv_1.xml', 'http://test1', " + d + ");");
+        db.execSQL("INSERT INTO "+ TABLE +" ("
+                + COLUMN_NAME + ", "
+                + COLUMN_FILENAME + ", "
+                + COLUMN_ORIGIN  + ", "
+                + COLUMN_CREATED + ") VALUES ('test2', 'savedarchiv_2.xml', 'http://test2', " + d + ");");
     }
 
     @Override
