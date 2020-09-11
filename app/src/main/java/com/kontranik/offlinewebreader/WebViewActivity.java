@@ -1,31 +1,36 @@
 package com.kontranik.offlinewebreader;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.webkit.ValueCallback;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Toast;
+
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-
-import android.Manifest;
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
-import android.content.DialogInterface;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.webkit.ValueCallback;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.Toast;
-import android.widget.Toolbar;
-
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.io.*;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -38,7 +43,7 @@ public class WebViewActivity extends AppCompatActivity {
     public static final String PREFIX_ARCHIVFILE = "archiv_";
     public static final String EXT_ARCHIVFILE = ".mht";
 
-    private WebView webView;
+    private WebView myWebView;
     private FloatingActionButton saveButton;
 
     private ProgressDialog progDailog;
@@ -47,11 +52,37 @@ public class WebViewActivity extends AppCompatActivity {
 
     private OfflinePage page;
 
-    private MenuItem miUpdateArchive;
 
     // Sample WebViewClient in case it was needed...
-    // See continueWhenLoaded() sample function for the best place to set it on our webView
+    // See continueWhenLoaded() sample function for the best place to set it on our myWebView
     private class MyWebClient extends WebViewClient {
+
+        int color;
+
+        MyWebClient(int color) {
+            this.color = color;
+        }
+
+        @Override
+        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl)
+        {
+            String url = myWebView.getUrl();
+            if ( url.startsWith("http://")) {
+                url = url.replace("http://", "https://");
+                myWebView.loadUrl(url);
+            } else {
+                myWebView.loadUrl(String.format("https://www.google.de/search?q=%s", myWebView.getUrl()));
+            }
+        }
+
+        @TargetApi(android.os.Build.VERSION_CODES.M)
+        @Override
+        public void onReceivedError(WebView inView, WebResourceRequest inReq, WebResourceError inError)
+        {
+            // do some stuff
+            onReceivedError(inView, inError.getErrorCode(), inError.getDescription().toString(), inReq.getUrl().toString());
+        }
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             progDailog.show();
@@ -66,17 +97,23 @@ public class WebViewActivity extends AppCompatActivity {
             Lt.d("Web page loaded: " + url);
 
             if ( page == null ) saveButton.show();
-            if ( page != null && webView.getUrl().equals("file://" + page.getFilename()) ) {
-                float webviewsize = webView.getContentHeight() - webView.getTop();
-                float positionInWV = webviewsize * page.getPosition();
-                int positionY = Math.round(webView.getTop() + positionInWV);
-                webView.scrollTo(0, positionY);
+            if ( page != null && myWebView.getUrl().equals("file://" + page.getFilename()) ) {
+                myWebView.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        int positionY = calculateScrollPosition();
+                        myWebView.scrollTo(0, positionY);
+                    }
+                    // Delay the scrollTo to make it work
+                }, 300);
             }
-            miUpdateArchive.setEnabled(page != null && !webView.getUrl().startsWith("file://"));
-            super.onPageFinished(view, url);
+
+            super.onPageFinished(myWebView, url);
         }
     }
 
+
+    @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,19 +123,42 @@ public class WebViewActivity extends AppCompatActivity {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
                 STORAGE_PERMISSION_CODE);
 
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        if ( getSupportActionBar() != null)
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        // This callback will only be called when MyFragment is at least Started.
+        OnBackPressedCallback callback = new OnBackPressedCallback(true /* enabled by default */) {
+            @Override
+            public void handleOnBackPressed() {
+                updatePosition();
+                finish();
+            }
+        };
+        this.getOnBackPressedDispatcher().addCallback(this, callback);
+
 
         adapter = new DatabaseAdapter(this);
 
         progDailog = ProgressDialog.show(this, "Loading","Please wait...", true);
         progDailog.setCancelable(false);
 
-        webView = (WebView) findViewById(R.id.webview);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setLoadWithOverviewMode(true);
-        webView.getSettings().setUseWideViewPort(false);
-        webView.getSettings().setUserAgentString("Android");
-        webView.setWebViewClient(new MyWebClient());
+        myWebView = (WebView) findViewById(R.id.webview);
+
+        WebSettings webSettings = myWebView.getSettings();
+
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setUseWideViewPort(false);
+
+        webSettings.setBuiltInZoomControls(true);
+        webSettings.setDisplayZoomControls(false);
+        webSettings.setSupportZoom(true);
+
+        webSettings.setUserAgentString("Android");
+        webSettings.setDefaultTextEncodingName("utf-8");
+
+        myWebView.setWebViewClient(new MyWebClient( Color.rgb(229, 215, 204) ));
 
         saveButton = findViewById(R.id.btn_Save);
         saveButton.hide();
@@ -109,30 +169,66 @@ public class WebViewActivity extends AppCompatActivity {
             }
         });
 
+        // Get intent, action and MIME type
+        Intent intent = getIntent();
+
+        // Receive shared text from other Apps
+        String action = intent.getAction();
+        String type = intent.getType();
+
+        if (Intent.ACTION_SEND.equals(action) && type != null) {
+            if ("text/plain".equals(type)) {
+                handleSendText(intent); // Handle text being sent
+            }
+        }
+
         // test load url
-        //webView.loadUrl("https://librusec.pro/");
+        //myWebView.loadUrl("https://librusec.pro/");
 
         // test load archiv
         //testLoadArchiv("SavedArchive.mht");
 
-        Bundle arguments = getIntent().getExtras();
+        // Receive shared url or page object from MainActivity
+        Bundle arguments = intent.getExtras();
         if(arguments!=null) {
             if ( arguments.containsKey(INTENT_KEY_URL)) {
                 String url = arguments.get(INTENT_KEY_URL).toString();
-                page = null;
-                webView.loadUrl(url);
+                loadUrl(url);
             } else if ( arguments.containsKey(OfflinePage.class.getSimpleName())) {
                 page = (OfflinePage) arguments.getSerializable(OfflinePage.class.getSimpleName());
-                loadPage(page);
+                if ( page != null) {
+                    loadPage(page);
+                } else {
+                    Toast.makeText(WebViewActivity.this,
+                            "Can' get Page",
+                            Toast.LENGTH_LONG)
+                            .show();
+                }
             }
         }
 
+    }
+
+    void handleSendText(Intent intent) {
+        String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
+        if (sharedText != null) {
+            Lt.d(sharedText);
+            loadUrl(sharedText);
+        }
     }
 
     @Override
     protected void onStop() {
         updatePosition();
         super.onStop();
+    }
+
+    private void loadUrl(String url) {
+        page = null;
+        if ( ! url.toLowerCase().startsWith("http")) {
+            url = "http://" + url;
+        }
+        myWebView.loadUrl(url);
     }
 
     private void loadPage(OfflinePage page) {
@@ -145,9 +241,9 @@ public class WebViewActivity extends AppCompatActivity {
                         "Archive file not exist. Load Origin Url",
                         Toast.LENGTH_SHORT)
                         .show();
-                webView.loadUrl(page.getOrigin());
+                myWebView.loadUrl(page.getOrigin());
             } else {
-                webView.loadUrl("file://" + f.getAbsolutePath());
+                myWebView.loadUrl("file://" + f.getAbsolutePath());
             }
         } else {
             Toast.makeText(WebViewActivity.this,
@@ -158,13 +254,42 @@ public class WebViewActivity extends AppCompatActivity {
 
     }
 
-    // Calculate the % of scroll progress in the actual web page content
+    /**
+     * Calculate ScrollY of saved percent progress
+     *
+     */
+    private int calculateScrollPosition() {
+    /*
+    float positionTopView = myWebView.getTop();
+    float webviewsize = myWebView.getContentHeight() - positionTopView;
+    float positionInWV = webviewsize * page.getPosition();
+    int positionY = Math.round(positionTopView + positionInWV);
+    */
+
+        float contentHeight = myWebView.getContentHeight() * myWebView.getScaleY();
+        float total = contentHeight * getResources().getDisplayMetrics().density - myWebView.getHeight();
+        return Math.round(page.getPosition() * (total - getResources().getDisplayMetrics().density));
+    }
+
+    /**
+     * Calculate the % of scroll progress in the actual web page content
+      */
     private float calculateProgression() {
-        float positionTopView = webView.getTop();
-        float contentHeight = webView.getContentHeight();
-        float currentScrollPosition = webView.getScrollY();
+
+        /*
+        float positionTopView = myWebView.getTop();
+        float contentHeight = myWebView.getContentHeight();
+        float currentScrollPosition = myWebView.getScrollY();
         float percentWebview = (currentScrollPosition - positionTopView) / contentHeight;
-        return percentWebview;
+        */
+
+        float contentHeight = myWebView.getContentHeight() * myWebView.getScaleY();
+        float total = contentHeight * getResources().getDisplayMetrics().density - myWebView.getHeight();
+        float percent = Math.min(myWebView.getScrollY() / (total - getResources().getDisplayMetrics().density), 1);
+
+        Log.d("SCROLL", "Percentage: " + percent);
+
+        return percent;
     }
 
     public void saveArchive(){
@@ -184,14 +309,15 @@ public class WebViewActivity extends AppCompatActivity {
                         }
                     });
             alertDialogBuilder.create();
+            alertDialogBuilder.show();
         } else {
             saveNewPage();
         }
     }
 
     private void updateArchive() {
-        page.setOrigin(webView.getUrl());
-        page.setName(webView.getTitle());
+        page.setOrigin(myWebView.getUrl());
+        page.setName(myWebView.getTitle());
         page.setPosition(calculateProgression());
         saveDB(page);
         saveArchiveFile(page.getFilename());
@@ -208,15 +334,15 @@ public class WebViewActivity extends AppCompatActivity {
     }
 
     private void saveNewPage() {
-        String origin = webView.getUrl();
-        String title = webView.getTitle();
+        String origin = myWebView.getUrl();
+        String title = myWebView.getTitle();
         Date now = new Date();
         SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd_HHmmss");
 
         File dir = getFilesDir();
         String filename = dir.getAbsolutePath() + File.separator + PREFIX_ARCHIVFILE + df.format(now) + EXT_ARCHIVFILE;
 
-        OfflinePage page = new OfflinePage(origin, title, filename, null, 0);
+        page = new OfflinePage(origin, title, filename, null, 0);
         saveDB(page);
         saveArchiveFile(filename);
         saveButton.hide();
@@ -236,7 +362,7 @@ public class WebViewActivity extends AppCompatActivity {
     public void saveArchiveFile(String fileName){
         Lt.d("Save archive");
         try {
-            webView.saveWebArchive(fileName, false, new ValueCallback<String>() {
+            myWebView.saveWebArchive(fileName, false, new ValueCallback<String>() {
                 @Override
                 public void onReceiveValue(String value) {
                     if (value != null) {
@@ -309,22 +435,31 @@ public class WebViewActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
         getMenuInflater().inflate(R.menu.webview_menu, menu);
-
-        miUpdateArchive = menu.findItem(R.id.action_update_archive).setEnabled(false);
-        miUpdateArchive.setEnabled(false);
-
         return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        menu.findItem(R.id.action_go_back).setEnabled(myWebView.canGoBack());
+        Lt.d(myWebView.getUrl());
+        menu.findItem(R.id.action_update_archive).setEnabled(page != null && ! myWebView.getUrl().startsWith("file://") && ! page.getOrigin().equals(myWebView.getUrl()));
+
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch(id){
+            case R.id.action_go_back :
+                myWebView.goBack();
+                return true;
             case R.id.action_update_archive :
-                updateArchive();
+                //updateArchive();
+                saveArchive();
                 return true;
             case android.R.id.home:
                 updatePosition();
