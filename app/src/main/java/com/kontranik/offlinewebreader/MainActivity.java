@@ -12,8 +12,8 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -31,8 +31,9 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean fabExpanded = false;
     private FloatingActionButton fabAdd;
-    private LinearLayout layoutFabClipboard;
-    private LinearLayout layoutFabEdit;
+    private FloatingActionButton fabClipboard;
+    private FloatingActionButton fabEdit;
+    private TextView cvtClipboard, cvtEdit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,8 +42,10 @@ public class MainActivity extends AppCompatActivity {
 
         fabAdd = this.findViewById(R.id.fabAdd);
 
-        layoutFabClipboard = this.findViewById(R.id.layoutFabClipboard);
-        layoutFabEdit = this.findViewById(R.id.layoutFabEdit);
+        fabClipboard = this.findViewById(R.id.fabClipboard);
+        fabEdit = this.findViewById(R.id.fabEdit);
+        cvtClipboard = this.findViewById(R.id.cvtClipboard);
+        cvtEdit = this.findViewById(R.id.cvtEdit);
 
         //When main Fab (Settings) is clicked, it expands if not expanded already.
         //Collapses if main FAB was open already.
@@ -107,16 +110,20 @@ public class MainActivity extends AppCompatActivity {
 
     //closes FAB submenus
     private void closeSubMenusFab(){
-        layoutFabClipboard.setVisibility(View.INVISIBLE);
-        layoutFabEdit.setVisibility(View.INVISIBLE);
+        fabClipboard.hide();
+        cvtClipboard.setVisibility(View.INVISIBLE);
+        fabEdit.hide();
+        cvtEdit.setVisibility(View.INVISIBLE);
         fabAdd.setImageResource(R.drawable.ic_add_black_24dp);
         fabExpanded = false;
     }
 
     //Opens FAB submenus
     private void openSubMenusFab(){
-        layoutFabClipboard.setVisibility(View.VISIBLE);
-        layoutFabEdit.setVisibility(View.VISIBLE);
+        fabClipboard.show();
+        cvtClipboard.setVisibility(View.VISIBLE);
+        fabEdit.show();
+        cvtEdit.setVisibility(View.VISIBLE);
         //Change settings icon to 'X' icon
         fabAdd.setImageResource(R.drawable.ic_close_black_24dp);
         fabExpanded = true;
