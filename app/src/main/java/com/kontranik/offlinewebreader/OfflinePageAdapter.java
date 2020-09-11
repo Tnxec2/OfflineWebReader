@@ -3,7 +3,6 @@ package com.kontranik.offlinewebreader;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
-import android.media.Image;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,6 +17,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class OfflinePageAdapter extends ArrayAdapter<OfflinePage> {
 
@@ -48,12 +48,8 @@ public class OfflinePageAdapter extends ArrayAdapter<OfflinePage> {
         viewHolder.nameView.setText(entry.getName());
         viewHolder.originView.setText( entry.getOrigin());
 
-        Float pagePosition = entry.getPosition();
-        if ( pagePosition != null ) {
-            viewHolder.positionView.setText(String.format("%.0f %%", pagePosition));
-        } else {
-            viewHolder.positionView.setText("0 %");
-        }
+        float pagePosition = entry.getPosition();
+        viewHolder.positionView.setText( String.format(Locale.getDefault(),"%d %%", (int) (pagePosition * 100))  );
 
         byte[] imgByte = entry.getImage();
         if ( imgByte == null) {
@@ -62,7 +58,7 @@ public class OfflinePageAdapter extends ArrayAdapter<OfflinePage> {
             viewHolder.coverView.setImageBitmap(BitmapFactory.decodeByteArray(imgByte, 0, imgByte.length));
         }
 
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd HH:mm");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd HH:mm", Locale.getDefault());
 
         Long created = entry.getCreated();
         if ( created != null ) {
@@ -82,7 +78,7 @@ public class OfflinePageAdapter extends ArrayAdapter<OfflinePage> {
                     public boolean onMenuItemClick(MenuItem item) {
                         switch (item.getItemId()) {
                             case R.id.action_open_archive_from_list:
-                                openArchiv(entry);
+                                openArchive(entry);
                                 break;
                             case R.id.action_delete_archive_from_list:
                                 deleteEntry(entry, position);
@@ -97,6 +93,8 @@ public class OfflinePageAdapter extends ArrayAdapter<OfflinePage> {
             }
         });//closing the setOnClickListener method
 
+        viewHolder.menuButton.setFocusable(false);
+
         return convertView;
     }
 
@@ -109,16 +107,16 @@ public class OfflinePageAdapter extends ArrayAdapter<OfflinePage> {
         final TextView createdView;
 
         ViewHolder(View view){
-            coverView = (ImageView) view.findViewById(R.id.cover);
-            nameView = (TextView) view.findViewById(R.id.name);
-            originView = (TextView) view.findViewById(R.id.origin);
-            positionView = (TextView) view.findViewById(R.id.position);
-            createdView = (TextView) view.findViewById(R.id.created);
+            coverView = view.findViewById(R.id.cover);
+            nameView = view.findViewById(R.id.name);
+            originView = view.findViewById(R.id.origin);
+            positionView = view.findViewById(R.id.position);
+            createdView = view.findViewById(R.id.created);
             menuButton = view.findViewById(R.id.btnMenu);
         }
     }
 
-    private void openArchiv(OfflinePage entry) {
+    private void openArchive(OfflinePage entry) {
         Lt.d(entry.getOrigin());
         Intent intent = new Intent(getContext(), WebViewActivity.class);
         intent.putExtra( OfflinePage.class.getSimpleName(), entry);
@@ -128,9 +126,9 @@ public class OfflinePageAdapter extends ArrayAdapter<OfflinePage> {
     private void deleteEntry(OfflinePage entry, int position) {
         entrys.remove(position);
         notifyDataSetChanged();
-        DatabaseAdapter dbadapter = new DatabaseAdapter(getContext());
-        dbadapter.open();
-        dbadapter.delete(entry.getId());
-        dbadapter.close();
+        DatabaseAdapter dbAdapter = new DatabaseAdapter(getContext());
+        dbAdapter.open();
+        dbAdapter.delete(entry.getId());
+        dbAdapter.close();
     }
 }

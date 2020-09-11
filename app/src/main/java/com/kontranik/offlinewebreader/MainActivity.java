@@ -1,8 +1,5 @@
 package com.kontranik.offlinewebreader;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
@@ -11,8 +8,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -20,6 +15,9 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -29,7 +27,6 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private List<OfflinePage> pages = new ArrayList<>();
-    private ListView pageList;
     private OfflinePageAdapter pagesAdapter;
 
     private boolean fabExpanded = false;
@@ -42,10 +39,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        fabAdd = (FloatingActionButton) this.findViewById(R.id.fabAdd);
+        fabAdd = this.findViewById(R.id.fabAdd);
 
-        layoutFabClipboard = (LinearLayout) this.findViewById(R.id.layoutFabClipboard);
-        layoutFabEdit = (LinearLayout) this.findViewById(R.id.layoutFabEdit);
+        layoutFabClipboard = this.findViewById(R.id.layoutFabClipboard);
+        layoutFabEdit = this.findViewById(R.id.layoutFabEdit);
 
         //When main Fab (Settings) is clicked, it expands if not expanded already.
         //Collapses if main FAB was open already.
@@ -53,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         fabAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (fabExpanded == true){
+                if (fabExpanded){
                     closeSubMenusFab();
                 } else {
                     openSubMenusFab();
@@ -81,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         closeSubMenusFab();
 
         // получаем элемент ListView
-        pageList = findViewById(R.id.offlinepageList);
+        ListView pageList = findViewById(R.id.offlinepageList);
 
         // создаем адаптер
         pagesAdapter = new OfflinePageAdapter(this, R.layout.offlinepage_listitem, pages);
@@ -190,20 +187,22 @@ public class MainActivity extends AppCompatActivity {
         String pasteData = "";
 
         // If it does contain data, decide if you can handle the data.
-        if (!(clipboard.hasPrimaryClip())) {
+        if (clipboard != null) {
+            if (!(clipboard.hasPrimaryClip())) {
 
-        } else if (!(clipboard.getPrimaryClipDescription().hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN))) {
+            } else if (!(clipboard.getPrimaryClipDescription().hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN))) {
 
-            // since the clipboard has data but it is not plain text
+                // since the clipboard has data but it is not plain text
 
-        } else {
+            } else {
 
-            //since the clipboard contains plain text.
-            ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
+                //since the clipboard contains plain text.
+                ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
 
-            // Gets the clipboard as text.
-            pasteData = item.getText().toString();
-            editAddress(pasteData);
+                // Gets the clipboard as text.
+                pasteData = item.getText().toString();
+                editAddress(pasteData);
+            }
         }
     }
 

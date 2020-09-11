@@ -3,9 +3,13 @@
 
 
     <item
+        android:id="@+id/action_go_back"
+        android:orderInCategory="1"
+        android:title="@string/goback" />
+
+    <item
         android:id="@+id/action_update_archive"
         android:orderInCategory="1"
         android:title="@string/update" />
-
 
 </menu>
